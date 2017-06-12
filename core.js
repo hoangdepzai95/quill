@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Parchment from 'parchment';
 import Quill from './core/quill';
 

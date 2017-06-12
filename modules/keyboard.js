@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import clone from 'clone';
 import equal from 'deep-equal';
 import extend from 'extend';
@@ -8,6 +10,11 @@ import logger from '../core/logger';
 import Module from '../core/module';
 
 let debug = logger('quill:keyboard');
+let prevKeyEvent = {
+  keyCode: null,
+  time: null,
+  formats: {},
+};
 
 const SHORTKEY = /Mac/i.test(navigator.platform) ? 'metaKey' : 'ctrlKey';
 
@@ -67,6 +74,22 @@ class Keyboard extends Module {
 
   listen() {
     this.quill.root.addEventListener('keydown', (evt) => {
+      // fix bug on vietnamese key
+      if (prevKeyEvent.keyCode === 8 && !(evt.keyCode < 193)) {
+        const now = new Date().valueOf();
+        // fillter actions by machine, human cant type fast like this
+        if (now - prevKeyEvent.time < 50) {
+          for (let key of Object.keys(prevKeyEvent.formats)) {
+            this.quill.format(key, prevKeyEvent.formats[key]);
+          }
+        }
+      }
+      // cache preve event
+      prevKeyEvent.keyCode = evt.keyCode;
+      if (evt.keyCode === 8) {
+        prevKeyEvent.time = new Date().valueOf();
+        prevKeyEvent.formats = this.quill.getFormat();
+      }
       if (evt.defaultPrevented) return;
       let which = evt.which || evt.keyCode;
       let bindings = (this.bindings[which] || []).filter(function(binding) {
